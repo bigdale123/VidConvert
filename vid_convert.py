@@ -1,52 +1,64 @@
+from threading import Thread
+from concurrent.futures import ThreadPoolExecutor
+from discord_webhook import DiscordWebhook
+import sys
 import os
-import platform
-import subprocess
+import shutil
+import queue
+import re
 
-def handbrake(half_path_list,source_path,convert_path):
-    current_file = ""
-    error_files = []
-    for i in half_path_list:
-        for file in os.listdir(source_path+i):
-            if os.path.isfile(os.path.join(source_path+i, file)):
-                if platform.system() == "Linux":
-                    current_file = source_path+i+"/"+file
-                    output_file = convert_path+i+"/"+file
-                    print(current_file)
-                    cmd = ['HandBrakeCLI','-Z',"General/Fast 1080p30",'-i',current_file,'-o',output_file,'--subtitle', 'scan,1,2,3,4,5,6,7,8,9,10', '-a', '1,2,3,4,5,6,7,8,9,10']
-                elif platform.system() == "Windows":
-                    current_file = source_path+i+"\\"+file
-                    output_file = convert_path+i+"\\"+file
-                    print(current_file)
-                    cmd = ['C:\Program Files\Handbrake\HandBrakeCLI.exe','-Z',"General/Fast 1080p30",'-i',current_file,'-o',output_file,'--subtitle', 'scan,1,2,3,4,5,6,7,8,9,10', '-a', '1,2,3,4,5,6,7,8,9,10']
-                subprocess.call(cmd)
+preset_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "presets.json")
 
+def convertVideo(video_file):
+    temp_file = os.path.join(os.path.dirname(video_file), f"temp_file.mkv")
+    os.system(f"HandBrakeCLI -i \"{video_file}\" -o \"{temp_file}\" --preset-import-file \"{preset_file}\" --preset \"Fast 1080p NVENC\"")
+    shutil.move(temp_file, video_file)
+    return
 
-def prepFunc(path,output_path):
-    # convert_path = os.getcwd()+"\\"+str(series)+"_ReEnc"
-    list_to_make = []
-    for top, dirs, files in os.walk(path, topdown=True):
-        if platform.system() == "Linux":
-            list_to_make.append("/"+top[len(path)+1:])
-        elif platform.system() == "Windows":    
-            list_to_make.append("\\"+top[len(path)+1:])
-    print(list_to_make)
-    for i in range(len(list_to_make)):
-        if platform.system() == "Linux":
-            if list_to_make[i] == "/":
-                list_to_make[i] = ""
-            else:
-                os.system("mkdir "+"\""+output_path+list_to_make[i]+"\"")
-                print("mkdir "+"\""+output_path+list_to_make[i]+"\"")
-        elif platform.system() == "Windows":
-            if list_to_make[i] == "\\":
-                list_to_make[i] = ""
-            else:
-                os.system("mkdir "+"\""+output_path+list_to_make[i]+"\"")
-                print("mkdir "+"\""+output_path+list_to_make[i]+"\"")
-    return list_to_make
+def convert_sub(file):
+    os.system("SubtitleEdit /convert \""+file+"\" srt /ocrengine:nOCR")
+    return
 
-output_folder = "C:\\Users\\Dylan\\Desktop\\Jimmy_Neutron_Boy_Genius_ReEnc"
-input_folder = "C:\\Users\\Dylan\\Desktop\\Jimmy_Neutron_Boy_Genius"
+def extractSubtitles(file):
+    base_name = os.path.splitext(os.path.basename(file))[0]
+    # print(base_name)
 
-half_path_list = prepFunc(input_folder,output_folder)
-handbrake(half_path_list,input_folder,output_folder)
+    pattern = re.compile(re.escape(base_name) + r'\.\w*\.srt', re.IGNORECASE)
+    exists = False
+    for srt_file in os.listdir(os.path.dirname(file)):
+        # print(srt_file)
+        # print(pattern.match(srt_file))
+        if pattern.match(srt_file):
+            exists = True
+            break
+    if exists:
+        print("Found Existing SRT file, doing nothing.")
+    else:
+        convert_sub(file)
+    return
+
+def getFiles(folder):
+    files = []
+    try:
+        for root, dirs, files_in_dir in os.walk(folder):
+            for file in files_in_dir:
+                if file.endswith(".mkv") or file.endswith(".mp4") or file.endswith(".avi"):
+                    files.append(os.path.join(root, file))
+        return files
+
+    except OSError as e:
+        print(f"Error reading files in folder {folder}: {e}")
+        return files
+
+if __name__ == "__main__":
+    files = getFiles(sys.argv[1])
+    NUM_WORKERS = 8
+    with ThreadPoolExecutor(max_workers=NUM_WORKERS) as executor:
+        futures = [executor.submit(extractSubtitles, file) for file in files]
+        for future in futures:
+            future.result()
+
+    for file in files:
+        convertVideo(file)
+
+    DiscordWebhook(url='https://discord.com/api/webhooks/1007306451783516261/qgy4EPGLhVN5Bc_bYWvBMw1I0RfK-N_7Zpm0aSbofQZL2EzYJ_7Pc7ahIcfKoJ5Be72l', content="VidConvert has Finished.").execute()
