@@ -52,7 +52,7 @@ def getFiles(folder):
 
 if __name__ == "__main__":
     files = getFiles(sys.argv[1])
-    NUM_WORKERS = 4
+    NUM_WORKERS = 6
     with ThreadPoolExecutor(max_workers=NUM_WORKERS) as executor:
         futures = [executor.submit(extractSubtitles, file) for file in files]
         for future in futures:

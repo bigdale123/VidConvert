@@ -2,6 +2,7 @@ from threading import Thread
 from concurrent.futures import ThreadPoolExecutor
 from discord_webhook import DiscordWebhook
 import sys
+import subprocess
 import os
 import shutil
 import queue
@@ -37,12 +38,26 @@ def extractSubtitles(file):
         convert_sub(file)
     return
 
+def check_h264(path):
+    ffprobe_command = str(subprocess.check_output(["ffprobe",
+        "-v",
+        "error",
+        "-select_streams",
+        "v:0",
+        "-show_entries",
+        "stream=codec_name",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
+        f"{path}"
+    ]))
+    return "h264" in ffprobe_command
+
 def getFiles(folder):
     files = []
     try:
         for root, dirs, files_in_dir in os.walk(folder):
             for file in files_in_dir:
-                if file.endswith(".mkv") or file.endswith(".mp4") or file.endswith(".avi"):
+                if (file.endswith(".mkv") or file.endswith(".mp4") or file.endswith(".avi") or file.endswith(".webm") or file.endswith(".m4v")):
                     files.append(os.path.join(root, file))
         return files
 
