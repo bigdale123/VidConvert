@@ -1,5 +1,4 @@
 from threading import Thread
-from concurrent.futures import ThreadPoolExecutor
 from discord_webhook import DiscordWebhook
 import sys
 import subprocess
@@ -11,31 +10,12 @@ import re
 preset_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "presets.json")
 
 def convertVideo(video_file):
-    temp_file = os.path.join(os.path.dirname(video_file), f"temp_file.mkv")
+    temp_file = os.path.join(os.path.dirname(video_file), "temp_file.mkv")
+    new_file = os.path.join(os.path.dirname(video_file), "new_file.mkv")
     os.system(f"HandBrakeCLI -i \"{video_file}\" -o \"{temp_file}\" --preset-import-file \"{preset_file}\" --preset \"Fast 1080p NVENC\"")
-    shutil.move(temp_file, video_file)
-    return
-
-def convert_sub(file):
-    os.system("SubtitleEdit /convert \""+file+"\" srt /ocrengine:nOCR")
-    return
-
-def extractSubtitles(file):
-    base_name = os.path.splitext(os.path.basename(file))[0]
-    # print(base_name)
-
-    pattern = re.compile(re.escape(base_name) + r'\.\w*\.srt', re.IGNORECASE)
-    exists = False
-    for srt_file in os.listdir(os.path.dirname(file)):
-        # print(srt_file)
-        # print(pattern.match(srt_file))
-        if pattern.match(srt_file):
-            exists = True
-            break
-    if exists:
-        print("Found Existing SRT file, doing nothing.")
-    else:
-        convert_sub(file)
+    os.system(f"mkvmerge -o \"{new_file}\" -D \"{video_file}\" -A -S -B -T -M \"{temp_file}\"")
+    shutil.move(new_file, video_file)
+    os.remove(temp_file)
     return
 
 def check_h264(path):
@@ -53,11 +33,18 @@ def check_h264(path):
     return "h264" in ffprobe_command
 
 def getFiles(folder):
+    compatible_files = [
+        "mkv",
+        "mp4",
+        "avi",
+        "webm",
+        "m4v"
+    ]
     files = []
     try:
         for root, dirs, files_in_dir in os.walk(folder):
             for file in files_in_dir:
-                if (file.endswith(".mkv") or file.endswith(".mp4") or file.endswith(".avi") or file.endswith(".webm") or file.endswith(".m4v")):
+                if file.split(".")[-1] in compatible_files and not check_h264(os.path.join(root, file)):
                     files.append(os.path.join(root, file))
         return files
 
@@ -67,11 +54,6 @@ def getFiles(folder):
 
 if __name__ == "__main__":
     files = getFiles(sys.argv[1])
-    NUM_WORKERS = 8
-    with ThreadPoolExecutor(max_workers=NUM_WORKERS) as executor:
-        futures = [executor.submit(extractSubtitles, file) for file in files]
-        for future in futures:
-            future.result()
 
     for file in files:
         convertVideo(file)

@@ -132,7 +132,7 @@
               "AudioTrackQualityEnable": false,
               "AudioTrackQuality": -1,
               "AudioTrackGainSlider": 0,
-              "AudioTrackDRCSlider": 0
+              "AudioTrackDRCSlider": 1
             }
           ],
           "AudioSecondaryEncoderMode": true,
