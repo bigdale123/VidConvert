@@ -6,6 +6,7 @@ import os
 import shutil
 import queue
 import re
+import platform
 
 preset_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "presets.json")
 
@@ -57,5 +58,5 @@ if __name__ == "__main__":
 
     for file in files:
         convertVideo(file)
-
-    DiscordWebhook(url='https://discord.com/api/webhooks/1007306451783516261/qgy4EPGLhVN5Bc_bYWvBMw1I0RfK-N_7Zpm0aSbofQZL2EzYJ_7Pc7ahIcfKoJ5Be72l', content="VidConvert has Finished.").execute()
+    
+    DiscordWebhook(url='https://discord.com/api/webhooks/1007306451783516261/qgy4EPGLhVN5Bc_bYWvBMw1I0RfK-N_7Zpm0aSbofQZL2EzYJ_7Pc7ahIcfKoJ5Be72l', content=f"VidConvert on {platform.uname().node} ({platform.uname().system}) has Finished.").execute()
