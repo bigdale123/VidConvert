@@ -13,7 +13,7 @@ def convertVideo(video_file):
     temp_file = os.path.join(os.path.dirname(video_file), "temp_file.mkv")
     new_file = os.path.join(os.path.dirname(video_file), "new_file.mkv")
     os.system(f"HandBrakeCLI -i \"{video_file}\" -o \"{temp_file}\" --preset-import-file \"{preset_file}\" --preset \"Fast 1080p NVENC\"")
-    os.system(f"mkvmerge -o \"{new_file}\" -D \"{video_file}\" -A -S -B -T -M \"{temp_file}\"")
+    os.system(f"mkvmerge -o \"{new_file}\" -D -A \"{video_file}\" -S -B -T -M \"{temp_file}\"")
     shutil.move(new_file, video_file)
     os.remove(temp_file)
     return
@@ -44,7 +44,7 @@ def getFiles(folder):
     try:
         for root, dirs, files_in_dir in os.walk(folder):
             for file in files_in_dir:
-                if file.split(".")[-1] in compatible_files and not check_h264(os.path.join(root, file)):
+                if file.split(".")[-1] in compatible_files:# and not check_h264(os.path.join(root, file)):
                     files.append(os.path.join(root, file))
         return files
 

@@ -16,7 +16,7 @@ preset_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "presets.
 #     return
 
 def convert_sub(file):
-    os.system(f"auto_subtitle.exe --verbose true --language en --model small.en --srt_only True \"{file}\" -o \"{os.path.dirname(file)}\"")
+    os.system(f"faster-whisper-xxl.exe \"{file}\" --verbose true --language English --model medium -o \"{os.path.dirname(file)}\"")
     return
 
 def extractSubtitles(file):
@@ -52,7 +52,7 @@ def getFiles(folder):
 
 if __name__ == "__main__":
     files = getFiles(sys.argv[1])
-    NUM_WORKERS = 6
+    NUM_WORKERS = 4
     with ThreadPoolExecutor(max_workers=NUM_WORKERS) as executor:
         futures = [executor.submit(extractSubtitles, file) for file in files]
         for future in futures:
