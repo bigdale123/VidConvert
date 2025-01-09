@@ -2,10 +2,13 @@ from threading import Thread
 from concurrent.futures import ThreadPoolExecutor
 from discord_webhook import DiscordWebhook
 import sys
+from dotenv import load_dotenv, dotenv_values
 import os
 import shutil
 import queue
 import re
+
+load_dotenv()
 
 preset_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "presets.json")
 
@@ -61,4 +64,4 @@ if __name__ == "__main__":
     # for file in files:
     #     extractSubtitles(file)
 
-    DiscordWebhook(url='https://discord.com/api/webhooks/1007306451783516261/qgy4EPGLhVN5Bc_bYWvBMw1I0RfK-N_7Zpm0aSbofQZL2EzYJ_7Pc7ahIcfKoJ5Be72l', content="Subs Are Done.").execute()
+    DiscordWebhook(url=os.getenv("DISCORD_WEBHOOK"), content="Subs Are Done.").execute()
