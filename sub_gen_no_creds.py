@@ -2,13 +2,10 @@ from threading import Thread
 from concurrent.futures import ThreadPoolExecutor
 from discord_webhook import DiscordWebhook
 import sys
-from dotenv import load_dotenv, dotenv_values
 import os
 import shutil
 import queue
 import re
-
-load_dotenv()
 
 preset_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "presets.json")
 
@@ -19,7 +16,7 @@ preset_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "presets.
 #     return
 
 def convert_sub(file):
-    os.system(f"faster-whisper-xxl.exe \"{file}\" --verbose true --language English --model large --max_line_width 250 -o \"{os.path.dirname(file)}\"")
+    os.system(f"faster-whisper-xxl.exe \"{file}\" --verbose true --language English --model medium -o \"{os.path.dirname(file)}\"")
     return
 
 def extractSubtitles(file):
@@ -64,4 +61,4 @@ if __name__ == "__main__":
     # for file in files:
     #     extractSubtitles(file)
 
-    DiscordWebhook(url=os.getenv("DISCORD_WEBHOOK"), content="Subs Are Done.").execute()
+    DiscordWebhook(url='webhook', content="Subs Are Done.").execute()
